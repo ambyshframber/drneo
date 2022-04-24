@@ -1,0 +1,13 @@
+[package]
+name = "wobsite_2"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+neoercities = { git = "https://github.com/ambyshframber/neoercities", features = ["site_info"] }
+comrak = "0.12.1"
+thiserror = "1.0.30"
+walkdir = "2"
+argparse = "0.2.2"
