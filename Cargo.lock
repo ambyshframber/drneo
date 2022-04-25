@@ -268,6 +268,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "drneo"
+version = "0.1.0"
+dependencies = [
+ "argparse",
+ "comrak",
+ "neoercities",
+ "thiserror",
+ "walkdir",
+]
+
+[[package]]
 name = "encoding_rs"
 version = "0.8.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1602,17 +1613,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "80d0f4e272c85def139476380b12f9ac60926689dd2e01d4923222f40580869d"
 dependencies = [
  "winapi",
-]
-
-[[package]]
-name = "wobsite_2"
-version = "0.1.0"
-dependencies = [
- "argparse",
- "comrak",
- "neoercities",
- "thiserror",
- "walkdir",
 ]
 
 [[package]]

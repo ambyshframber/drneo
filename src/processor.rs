@@ -69,7 +69,8 @@ impl Processor {
         Ok(Processor {
             files: Vec::new(),
             info,
-            md_prefix, md_postfix, md_ignore, md_replace, md_render_options
+            md_prefix, md_postfix, md_ignore,
+            md_replace, md_render_options
         })
     }
 
@@ -118,6 +119,9 @@ impl Processor {
             if line.starts_with("(HEAD)") {
                 extra_head.push(&line[6..]);
                 head_len += 6;
+            }
+            else if line.trim() != "" {
+                break
             }
         }
         let extra_head = glue_vec_with(&extra_head, '\n');
