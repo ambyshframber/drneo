@@ -23,9 +23,9 @@ impl Processor {
     pub fn new() -> Result<Processor, SiteBuilderError> {
         let mut options = Options::get()?;
 
-        set_current_dir(&options.data_dir)?;
+        set_current_dir(&options.data_dir)?; // move into data dir
 
-        let key = read_to_string("cfg/api_key").ok().ok_or(cfg_error("missing api key config"))?;
+        let key = read_to_string("cfg/api_key").ok().ok_or(cfg_error("missing api key config"))?; // get required cfgs
         let client = NeocitiesClient::new_with_key(&key);
         let info = SiteInfo::new(client)?;
 
@@ -33,7 +33,7 @@ impl Processor {
         let md_postfix = read_to_string("cfg/md_postfix").ok().ok_or(cfg_error("missing markdown postfix config"))?;
         
         let mut md_ignore = Vec::new();
-        match open_or_none("cfg/md_ignore")? {
+        match open_or_none("cfg/md_ignore")? { // ignore cfg file if it's not there
             Some(s) => {
                 for file in s.split('\n') {
                     md_ignore.push(String::from(file))
@@ -41,18 +41,18 @@ impl Processor {
             }
             None => {}
         }
-        md_ignore.append(&mut options.md_ignore);
+        md_ignore.append(&mut options.md_ignore); // shift command line ignores in
 
         let mut md_replace = HashMap::new();
         match open_or_none("cfg/md_replace")? {
             Some(s) => {
                 for rep in s.split('\n') {
-                    options.md_replace.push(String::from(rep))
+                    options.md_replace.push(String::from(rep)) // store in options vec to avoid allocing a new vec
                 }
             }
             None => {}
         }
-        for r in options.md_replace {
+        for r in options.md_replace { // parse all replacements in one go
             let (trigger, replace) = match r.split_once('=') {
                 Some(a) => a,
                 None => {
@@ -64,7 +64,7 @@ impl Processor {
         }
 
         let mut md_render_options = ComrakOptions::default();
-        md_render_options.render.unsafe_ = true;
+        md_render_options.render.unsafe_ = true; // allow inline html
 
         Ok(Processor {
             files: Vec::new(),
@@ -82,11 +82,11 @@ impl Processor {
                 continue
             }
             let p = entry.path();
-            let path_string = p.to_str().ok_or(SiteBuilderError::PathError(p.to_string_lossy().to_string()))?;
+            let path_string = p.to_str().ok_or(SiteBuilderError::PathError(p.to_string_lossy().to_string()))?; // if theres invalid unicode then idk yell at the user
             println!("found {}", path_string);
             if let Some(ext) = p.extension() {
                 if ext.to_str().unwrap() == "md" {
-                    if !self.md_ignore.iter().any(|path| path == path_string) {
+                    if !self.md_ignore.iter().any(|path| path == path_string) { // check if file is set to ignore
                         println!("loading markdown {}", path_string);
                         self.load_markdown(p)?;
                         continue
@@ -100,7 +100,7 @@ impl Processor {
         Ok(())
     }
     fn load(&mut self, path: &Path) -> Result<(), SiteBuilderError> {
-        let file = read(path)?;
+        let file = read(path)?; // read to bytes because fuck you
         let site_path = get_remote_path(path)?;
         self.files.push((file, site_path));        
 
@@ -109,34 +109,35 @@ impl Processor {
     fn load_markdown(&mut self, path: &Path) -> Result<(), SiteBuilderError> {
         let file = read_to_string(path)?;
         let site_path = get_remote_path(path)?;
-        let site_path = &site_path[..site_path.len() - 3];
+        let site_path = &site_path[..site_path.len() - 3]; // remove ".md"
         let site_path = format!("{}.html", site_path);
 
         let f_split = file.split('\n');
         let mut extra_head = Vec::new();
         let mut head_len = 0;
         for line in f_split {
-            if line.starts_with("(HEAD)") {
+            if line.starts_with("(HEAD)") { // isolate EXTRA HEAD *thunder*
                 extra_head.push(&line[6..]);
-                head_len += 6;
+                head_len += 6; // compensate for length of EXTRA HEAD *thunder*
             }
-            else if line.trim() != "" {
+            else if line.trim() != "" { // allow empty lines in the EXTRA HEAD *thunder*
                 break
             }
         }
-        let extra_head = glue_vec_with(&extra_head, '\n');
-        let prefix = self.md_prefix.replace("##EXTRAHEAD##", &extra_head);
+        let extra_head = glue_vec_with(&extra_head, '\n'); // glue the EXTRA HEAD *thunder* back together
+        let prefix = self.md_prefix.replace("##EXTRAHEAD##", &extra_head); // EXTRA HEAD *thunder*
 
-        let mut file = String::from(&file[extra_head.len() + head_len..]);
+        let mut file = String::from(&file[extra_head.len() + head_len..]); // chop off EXTRA HEAD *thunder*
+
         for (trig, rep) in &self.md_replace {
-            file = file.replace(trig, &rep);
+            file = file.replace(trig, rep);
         }
 
         let html = markdown_to_html(&file, &self.md_render_options);
 
         let processed_file = format!("{}{}{}", prefix, html, self.md_postfix);
         //println!("{}", processed_file);
-        let bytes = processed_file.bytes().collect();
+        let bytes = processed_file.bytes().collect(); // convert to bytes
 
         self.files.push((bytes, site_path));
 
@@ -146,7 +147,7 @@ impl Processor {
     pub fn upload(&mut self) -> Result<(), SiteBuilderError> {
         let mut to_upload = Vec::new();
         for (i, (b, path)) in self.files.iter().enumerate() {
-            if self.info.bytes_changed(b, &path) {
+            if self.info.bytes_changed(b, &path) { // check all files to see if they changed
                 println!("file {} changed, uploading", path);
                 to_upload.push(i)
             }
@@ -154,7 +155,7 @@ impl Processor {
 
         let mut files = Vec::new();
         for i in to_upload {
-            files.push(self.files[i].clone());
+            files.push(self.files[i].clone()); // clone to avoid list fuckery
         }
 
         self.info.client.upload_bytes_multiple(files)?;
@@ -168,7 +169,7 @@ impl Processor {
         let mut to_delete = Vec::new();
         for i in &self.info.items {
             match i {
-                SiteItem::Dir(_) => continue,
+                SiteItem::Dir(_) => continue, // don't delete directories. that would be silly
                 SiteItem::File(f) => {
                     if !self.files.iter().any(|file| file.1 == f.path) {
                         to_delete.push(f.path.as_str());

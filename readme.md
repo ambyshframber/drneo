@@ -23,7 +23,7 @@ call `drneo` in a directory with the following structure (files marked with `*` 
 `cfg` contains configuration data for the program. the files are explained below:
 
 - `api_key`: a neocities API key (run `curl "https://USER:PASS@neocities.org/api/key"` to get one for your account)
-- `md_ignore`: a list of files to not process into html and instead upload as raw `.md` files
+- `md_ignore`: a list of file paths (from the root data directory) to not process into html and instead upload as raw `.md` files
 - `md_postfix`: a section of text to append to all markdown files
 - `md_prefix`: a section of text to prepend to all markdown files. also supports `##EXTRAHEAD##` (more on that later)
 - `md_replace`: a list of replacements to make in markdown files (more on that later)
