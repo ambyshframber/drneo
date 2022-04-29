@@ -10,9 +10,6 @@ use processor::Processor;
 mod processor;
 mod utils;
 
-const SITE_DIR: &'static str = "site";
-const SITE_DIR_LEN: usize = SITE_DIR.len();
-
 fn main() {
     match run() {
         Ok(_) => exit(0),
@@ -22,6 +19,7 @@ fn main() {
                 SiteBuilderError::EarlyExit => exit(0),
                 SiteBuilderError::CfgError(cfg) => println!("{}", cfg),
                 SiteBuilderError::PathError(path) => println!("{}", path),
+                SiteBuilderError::ExtensionError(path) => println!("{}", path),
                 SiteBuilderError::ArgumentError => exit(2),
                 _ => println!("{}", e.source().unwrap())
             }
@@ -51,6 +49,8 @@ pub enum SiteBuilderError {
     WalkError(#[from] walkdir::Error),
     #[error("path contained invalid unicode")]
     PathError(String),
+    #[error("invalid or missing file extension")]
+    ExtensionError(String),
     #[error("argument error")]
     ArgumentError,
     #[error("not an error")]

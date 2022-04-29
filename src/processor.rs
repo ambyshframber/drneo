@@ -7,17 +7,17 @@ use neoercities::{NeocitiesClient, site_info::{SiteInfo, SiteItem}};
 use walkdir::WalkDir;
 use comrak::{markdown_to_html, ComrakOptions};
 
-use crate::{SiteBuilderError, cfg_error, utils::*, SITE_DIR};
-
+use crate::{SiteBuilderError, cfg_error, utils::*, utils::{SITE_DIR, ALLOWED_FILE_TYPES}};
 
 pub struct Processor {
     files: Vec<(Vec<u8>, String)>,
-    pub info: SiteInfo,
+    info: SiteInfo,
     md_ignore: Vec<String>,
     md_prefix: String,
     md_postfix: String,
     md_replace: HashMap<String, String>,
-    md_render_options: ComrakOptions
+    md_options: ComrakOptions,
+    check_extensions: bool
 }
 impl Processor {
     pub fn new() -> Result<Processor, SiteBuilderError> {
@@ -63,14 +63,24 @@ impl Processor {
             md_replace.insert(trigger, String::from(replace));
         }
 
-        let mut md_render_options = ComrakOptions::default();
-        md_render_options.render.unsafe_ = true; // allow inline html
-
+        let mut md_options = ComrakOptions::default();
+        md_options.render.unsafe_ = true; // allow inline html
+        
+        md_options.extension.table = true;
+        md_options.extension.strikethrough = true;
+        md_options.extension.superscript = true;
+        md_options.extension.footnotes = true;
+        md_options.extension.autolink = true;
+        md_options.extension.tagfilter = true;
+        md_options.extension.tasklist = true;
+        md_options.extension.description_lists = true;
+        
         Ok(Processor {
             files: Vec::new(),
             info,
             md_prefix, md_postfix, md_ignore,
-            md_replace, md_render_options
+            md_replace, md_options,
+            check_extensions: options.check_extensions
         })
     }
 
@@ -84,16 +94,26 @@ impl Processor {
             let p = entry.path();
             let path_string = p.to_str().ok_or(SiteBuilderError::PathError(p.to_string_lossy().to_string()))?; // if theres invalid unicode then idk yell at the user
             println!("found {}", path_string);
-            if let Some(ext) = p.extension() {
-                if ext.to_str().unwrap() == "md" {
+
+            // this control flow is dodgy as all fuck but it works
+
+            if let Some(ext) = p.extension() { // only check the extension if there is one
+                let e_string = ext.to_str().unwrap(); // we know it's valid unicode already
+                if e_string == "md" {
                     if !self.md_ignore.iter().any(|path| path == path_string) { // check if file is set to ignore
                         println!("loading markdown {}", path_string);
                         self.load_markdown(p)?;
                         continue
                     }
                 }
+                else if self.check_extensions && !ALLOWED_FILE_TYPES.contains(&e_string) { // error out if ext is invalid
+                    return Err(SiteBuilderError::ExtensionError(String::from(path_string)))
+                }
             }
-            println!("loading {}", path_string);
+            else if self.check_extensions { // if theres no extension and we're checking, error out
+                return Err(SiteBuilderError::ExtensionError(String::from(path_string)))
+            }
+            println!("loading {}", path_string); // if its not markdown, and it has a valid ext, load normally
             self.load(p)?
         }
 
@@ -133,7 +153,7 @@ impl Processor {
             file = file.replace(trig, rep);
         }
 
-        let html = markdown_to_html(&file, &self.md_render_options);
+        let html = markdown_to_html(&file, &self.md_options);
 
         let processed_file = format!("{}{}{}", prefix, html, self.md_postfix);
         //println!("{}", processed_file);

@@ -2,7 +2,8 @@
 
 static site generator for neocities.
 
-`drneo` is designed to make running a neocities site much more painless, allowing you to write page content in markdown instead of html, and letting you keep your entire site source locally. it walks through a site source directory and automatically processes all `.md` files into html. it then uploads these processed versions and all the other files to your neocities site.
+`drneo` is designed to make running a neocities site much more painless, allowing you to write page content in markdown instead of html, and letting you keep your entire site source locally. it walks through a site source directory and automatically processes all `.md` files into html. it then uploads these processed versions and all the other files to your neocities site.  
+`drneo` uses the entire gfm spec, as provided by [comrak](https://github.com/kivikakk/comrak)
 
 ## how to use
 
@@ -23,18 +24,19 @@ call `drneo` in a directory with the following structure (files marked with `*` 
 `cfg` contains configuration data for the program. the files are explained below:
 
 - `api_key`: a neocities API key (run `curl "https://USER:PASS@neocities.org/api/key"` to get one for your account)
-- `md_ignore`: a list of file paths (from the root data directory) to not process into html and instead upload as raw `.md` files
+- `md_ignore`: a list of file paths (from the root data directory) to not process into html and instead upload as raw `.md` files. one path per line
 - `md_postfix`: a section of text to append to all markdown files
 - `md_prefix`: a section of text to prepend to all markdown files. also supports `##EXTRAHEAD##` (more on that later)
-- `md_replace`: a list of replacements to make in markdown files (more on that later)
+- `md_replace`: a list of replacements to make in markdown files (more on that later). one per line
 
 `site` can contain anything you like. just remember that ALL `.md` files will be processed into html unless you specifically tell the program to ignore them.
 
 ### command line options
 
-- `-d DIRECTORY`: run the program in `DIRECTORY`, not the cwd
+- `-d DIRECTORY`: run the program in `DIRECTORY`, instead of the current working directory
 - `-r REPLACEMENT`: add a replacement to the dictionary
 - `-i FILE`: ignore `FILE` when processing markdown
+- `-e`: don't check files to make sure they abide by neocities' file extension rules
 
 ## replacements and `##EXTRAHEAD##`
 
