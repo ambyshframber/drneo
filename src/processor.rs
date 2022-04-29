@@ -71,7 +71,7 @@ impl Processor {
         md_options.extension.superscript = true;
         md_options.extension.footnotes = true;
         md_options.extension.autolink = true;
-        md_options.extension.tagfilter = true;
+        //md_options.extension.tagfilter = true; // breaks everything
         md_options.extension.tasklist = true;
         md_options.extension.description_lists = true;
         
