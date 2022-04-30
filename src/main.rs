@@ -30,11 +30,7 @@ fn main() {
 
 fn run() -> Result<(), SiteBuilderError> {
     let mut p = Processor::new()?;
-    p.load_files()?;
-    p.upload()?;
-    p.delete_orphaned()?;
-
-    Ok(())
+    p.build()
 }
 
 #[derive(Error, Debug)]

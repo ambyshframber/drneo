@@ -37,6 +37,7 @@ this first set of options is for general control:
 - `-d DIRECTORY`: run the program in `DIRECTORY`, instead of the current working directory
 - `-r REPLACEMENT`: add a replacement to the dictionary
 - `-i FILE`: ignore `FILE` when processing markdown
+- `-L OUTPUT`: output files to `OUTPUT`, rather than uploading them
 - `-e`: don't check files to make sure they abide by neocities' file extension rules
 
 and this second set is for markdown spec control:

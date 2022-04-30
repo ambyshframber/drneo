@@ -1,6 +1,6 @@
 use std::env::set_current_dir;
-use std::fs::{read_to_string, read};
-use std::path::Path;
+use std::fs::{read_to_string, read, create_dir_all, write};
+use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 
 use neoercities::{NeocitiesClient, site_info::{SiteInfo, SiteItem}};
@@ -11,23 +11,31 @@ use crate::{SiteBuilderError, cfg_error, utils::*, utils::{SITE_DIR, ALLOWED_FIL
 
 pub struct Processor {
     files: Vec<(Vec<u8>, String)>,
-    info: SiteInfo,
+    info: Option<SiteInfo>,
     md_ignore: Vec<String>,
     md_prefix: String,
     md_postfix: String,
     md_replace: HashMap<String, String>,
     md_options: ComrakOptions,
-    check_extensions: bool
+    check_extensions: bool,
+    local: Option<PathBuf>
 }
 impl Processor {
     pub fn new() -> Result<Processor, SiteBuilderError> {
         let mut options = Options::get()?;
 
         set_current_dir(&options.data_dir)?; // move into data dir
-
-        let key = read_to_string("cfg/api_key").ok().ok_or(cfg_error("missing api key config"))?; // get required cfgs
-        let client = NeocitiesClient::new_with_key(&key);
-        let info = SiteInfo::new(client)?;
+        
+        let (local, info) = match options.local {
+            Some(p) => {
+                create_dir_all(&p)?;
+                (Some(PathBuf::from(p)), None)
+            }
+            None => {
+                let key = read_to_string("cfg/api_key").ok().ok_or(cfg_error("missing api key config"))?;
+                (None, Some(SiteInfo::new(NeocitiesClient::new_with_key(&key))?))
+            }
+        };
 
         let md_prefix = read_to_string("cfg/md_prefix").ok().ok_or(cfg_error("missing markdown prefix config"))?;
         let md_postfix = read_to_string("cfg/md_postfix").ok().ok_or(cfg_error("missing markdown postfix config"))?;
@@ -70,8 +78,24 @@ impl Processor {
             info,
             md_prefix, md_postfix, md_ignore,
             md_replace, md_options,
-            check_extensions: options.check_extensions
+            check_extensions: options.check_extensions,
+            local,
         })
+    }
+
+    pub fn build(&mut self) -> Result<(), SiteBuilderError> {
+        self.load_files()?;
+        match &self.local {
+            None => {
+                self.upload()?;
+                self.delete_orphaned()?;
+            }
+            Some(_) => {
+                self.output_local()?;
+            }
+        }
+
+        Ok(())
     }
 
     pub fn load_files(&mut self) -> Result<(), SiteBuilderError> {
@@ -157,7 +181,7 @@ impl Processor {
     pub fn upload(&mut self) -> Result<(), SiteBuilderError> {
         let mut to_upload = Vec::new();
         for (i, (b, path)) in self.files.iter().enumerate() {
-            if self.info.bytes_changed(b, &path) { // check all files to see if they changed
+            if self.info.as_ref().unwrap().bytes_changed(b, &path) { // check all files to see if they changed
                 println!("file {} changed, uploading", path);
                 to_upload.push(i)
             }
@@ -168,16 +192,16 @@ impl Processor {
             files.push(self.files[i].clone()); // clone to avoid list fuckery
         }
 
-        self.info.client.upload_bytes_multiple(files)?;
+        self.info.as_ref().unwrap().client.upload_bytes_multiple(files)?;
 
         Ok(())
     }
 
     pub fn delete_orphaned(&mut self) -> Result<(), SiteBuilderError> {
-        self.info.refresh()?;
+        self.info.as_mut().unwrap().refresh()?;
 
         let mut to_delete = Vec::new();
-        for i in &self.info.items {
+        for i in &self.info.as_ref().unwrap().items {
             match i {
                 SiteItem::Dir(_) => continue, // don't delete directories. that would be silly
                 SiteItem::File(f) => {
@@ -189,8 +213,18 @@ impl Processor {
             }
         }
 
-        self.info.client.delete_multiple(to_delete)?;
+        self.info.as_ref().unwrap().client.delete_multiple(to_delete)?;
 
+        Ok(())
+    }
+
+    fn output_local(&mut self) -> Result<(), SiteBuilderError> {
+        let p = self.local.as_ref().unwrap(); // will always be Some
+        for (data, path) in &self.files {
+            let loc_path = p.join(Path::new(&path[1..])); // trim off backslash
+            println!("writing to {}", loc_path.to_string_lossy());
+            write(loc_path, data)?
+        }
         Ok(())
     }
 }

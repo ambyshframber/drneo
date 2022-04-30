@@ -3,7 +3,7 @@ use std::fmt::Display;
 use std::io;
 use std::fs::read_to_string;
 
-use argparse::{ArgumentParser, Store, Collect, StoreTrue, StoreFalse};
+use argparse::{ArgumentParser, Store, Collect, StoreTrue, StoreFalse, StoreOption};
 use comrak::ComrakOptions;
 
 use crate::SiteBuilderError;
@@ -19,7 +19,8 @@ pub struct Options {
     pub md_ignore: Vec<String>,
     pub md_replace: Vec<String>,
     pub check_extensions: bool,
-    pub md_options: ComrakOptions
+    pub md_options: ComrakOptions,
+    pub local: Option<String>
 }
 
 impl Options {
@@ -35,6 +36,7 @@ impl Options {
             ap.refer(&mut o.md_ignore).add_option(&["-i"], Collect, "path to a markdown file that should not be processed into html");
             ap.refer(&mut o.md_replace).add_option(&["-r"], Collect, "a replacement for markdown processing");
             ap.refer(&mut o.check_extensions).add_option(&["-e"], StoreFalse, "do not check file extensions against neocities' list of allowed file types");
+            ap.refer(&mut o.local).add_option(&["-L"], StoreOption, "put output files in this directory instead of uploading");
 
             ap.refer(&mut o.md_options.render.unsafe_).add_option(&["-u"], StoreTrue, "allow inline html");
 
