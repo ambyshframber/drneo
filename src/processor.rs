@@ -63,17 +63,7 @@ impl Processor {
             md_replace.insert(trigger, String::from(replace));
         }
 
-        let mut md_options = ComrakOptions::default();
-        md_options.render.unsafe_ = true; // allow inline html
-        
-        md_options.extension.table = true;
-        md_options.extension.strikethrough = true;
-        md_options.extension.superscript = true;
-        md_options.extension.footnotes = true;
-        md_options.extension.autolink = true;
-        //md_options.extension.tagfilter = true; // breaks everything
-        md_options.extension.tasklist = true;
-        md_options.extension.description_lists = true;
+        let md_options = options.md_options;
         
         Ok(Processor {
             files: Vec::new(),
@@ -150,7 +140,7 @@ impl Processor {
         let mut file = String::from(&file[extra_head.len() + head_len..]); // chop off EXTRA HEAD *thunder*
 
         for (trig, rep) in &self.md_replace {
-            file = file.replace(trig, rep);
+            file = file.replace(trig, rep)
         }
 
         let html = markdown_to_html(&file, &self.md_options);

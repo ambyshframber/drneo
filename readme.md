@@ -2,8 +2,7 @@
 
 static site generator for neocities.
 
-`drneo` is designed to make running a neocities site much more painless, allowing you to write page content in markdown instead of html, and letting you keep your entire site source locally. it walks through a site source directory and automatically processes all `.md` files into html. it then uploads these processed versions and all the other files to your neocities site.  
-`drneo` uses the entire gfm spec, as provided by [comrak](https://github.com/kivikakk/comrak)
+`drneo` is designed to make running a neocities site much more painless, allowing you to write page content in markdown instead of html, and letting you keep your entire site source locally. it walks through a site source directory and automatically processes all `.md` files into html. it then uploads these processed versions and all the other files to your neocities site.
 
 ## how to use
 
@@ -33,10 +32,24 @@ call `drneo` in a directory with the following structure (files marked with `*` 
 
 ### command line options
 
+this first set of options is for general control:
+
 - `-d DIRECTORY`: run the program in `DIRECTORY`, instead of the current working directory
 - `-r REPLACEMENT`: add a replacement to the dictionary
 - `-i FILE`: ignore `FILE` when processing markdown
 - `-e`: don't check files to make sure they abide by neocities' file extension rules
+
+and this second set is for markdown spec control:
+
+- `-s`: enable strikethrough
+- `-T`: enable tag filter
+- `-t`: enable tables
+- `-a`: enable autolink
+- `-l`: enable task lists
+- `-S`: enable superscript
+- `-f`: enable footnotes
+- `-D`: enable description lists
+- `-u`: allow inline html
 
 ## replacements and `##EXTRAHEAD##`
 

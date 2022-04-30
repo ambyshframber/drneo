@@ -3,7 +3,8 @@ use std::fmt::Display;
 use std::io;
 use std::fs::read_to_string;
 
-use argparse::{ArgumentParser, Store, Collect, StoreFalse};
+use argparse::{ArgumentParser, Store, Collect, StoreTrue, StoreFalse};
+use comrak::ComrakOptions;
 
 use crate::SiteBuilderError;
 
@@ -18,6 +19,7 @@ pub struct Options {
     pub md_ignore: Vec<String>,
     pub md_replace: Vec<String>,
     pub check_extensions: bool,
+    pub md_options: ComrakOptions
 }
 
 impl Options {
@@ -33,6 +35,17 @@ impl Options {
             ap.refer(&mut o.md_ignore).add_option(&["-i"], Collect, "path to a markdown file that should not be processed into html");
             ap.refer(&mut o.md_replace).add_option(&["-r"], Collect, "a replacement for markdown processing");
             ap.refer(&mut o.check_extensions).add_option(&["-e"], StoreFalse, "do not check file extensions against neocities' list of allowed file types");
+
+            ap.refer(&mut o.md_options.render.unsafe_).add_option(&["-u"], StoreTrue, "allow inline html");
+
+            ap.refer(&mut o.md_options.extension.strikethrough).add_option(&["-s"], StoreTrue, "strikethrough");
+            ap.refer(&mut o.md_options.extension.tagfilter).add_option(&["-T"], StoreTrue, "tag filter");
+            ap.refer(&mut o.md_options.extension.table).add_option(&["-t"], StoreTrue, "tables");
+            ap.refer(&mut o.md_options.extension.autolink).add_option(&["-a"], StoreTrue, "autolink");
+            ap.refer(&mut o.md_options.extension.tasklist).add_option(&["-l"], StoreTrue, "tasklist");
+            ap.refer(&mut o.md_options.extension.superscript).add_option(&["-S"], StoreTrue, "superscript");
+            ap.refer(&mut o.md_options.extension.footnotes).add_option(&["-f"], StoreTrue, "footnotes");
+            ap.refer(&mut o.md_options.extension.description_lists).add_option(&["-D"], StoreTrue, "description lists");
 
             match ap.parse_args() {
                 Ok(_) => {},
