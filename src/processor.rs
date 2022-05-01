@@ -18,7 +18,8 @@ pub struct Processor {
     md_replace: HashMap<String, String>,
     md_options: ComrakOptions,
     check_extensions: bool,
-    local: Option<PathBuf>
+    local: Option<PathBuf>,
+    dry_run: bool
 }
 impl Processor {
     pub fn new() -> Result<Processor, SiteBuilderError> {
@@ -80,6 +81,7 @@ impl Processor {
             md_replace, md_options,
             check_extensions: options.check_extensions,
             local,
+            dry_run: options.dry_run
         })
     }
 
@@ -192,7 +194,9 @@ impl Processor {
             files.push(self.files[i].clone()); // clone to avoid list fuckery
         }
 
-        self.info.as_ref().unwrap().client.upload_bytes_multiple(files)?;
+        if !self.dry_run {
+            self.info.as_ref().unwrap().client.upload_bytes_multiple(files)?;
+        }
 
         Ok(())
     }
@@ -213,7 +217,9 @@ impl Processor {
             }
         }
 
-        self.info.as_ref().unwrap().client.delete_multiple(to_delete)?;
+        if !self.dry_run {
+            self.info.as_ref().unwrap().client.delete_multiple(to_delete)?;
+        }
 
         Ok(())
     }
@@ -223,7 +229,9 @@ impl Processor {
         for (data, path) in &self.files {
             let loc_path = p.join(Path::new(&path[1..])); // trim off backslash
             println!("writing to {}", loc_path.to_string_lossy());
-            write(loc_path, data)?
+            if !self.dry_run {
+                write(loc_path, data)?
+            }
         }
         Ok(())
     }

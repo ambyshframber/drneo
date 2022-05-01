@@ -3,10 +3,12 @@ use std::fmt::Display;
 use std::io;
 use std::fs::read_to_string;
 
-use argparse::{ArgumentParser, Store, Collect, StoreTrue, StoreFalse, StoreOption};
+use argparse::{ArgumentParser, Store, Collect, StoreTrue, StoreFalse, StoreOption, Print};
 use comrak::ComrakOptions;
 
 use crate::SiteBuilderError;
+
+pub const VERSION: &'static str = "0.1.0";
 
 pub const SITE_DIR: &'static str = "site";
 const SITE_DIR_LEN: usize = SITE_DIR.len();
@@ -20,7 +22,8 @@ pub struct Options {
     pub md_replace: Vec<String>,
     pub check_extensions: bool,
     pub md_options: ComrakOptions,
-    pub local: Option<String>
+    pub local: Option<String>,
+    pub dry_run: bool
 }
 
 impl Options {
@@ -35,8 +38,10 @@ impl Options {
             ap.refer(&mut o.data_dir).add_option(&["-d"], Store, "the site data directory");
             ap.refer(&mut o.md_ignore).add_option(&["-i"], Collect, "path to a markdown file that should not be processed into html");
             ap.refer(&mut o.md_replace).add_option(&["-r"], Collect, "a replacement for markdown processing");
+            ap.refer(&mut o.local).add_option(&["-L", "--local"], StoreOption, "put output files in this directory instead of uploading");
             ap.refer(&mut o.check_extensions).add_option(&["-e"], StoreFalse, "do not check file extensions against neocities' list of allowed file types");
-            ap.refer(&mut o.local).add_option(&["-L"], StoreOption, "put output files in this directory instead of uploading");
+            ap.refer(&mut o.dry_run).add_option(&["-n", "--dry-run"], StoreTrue, "do not upload or output files");
+            ap.add_option(&["-V"], Print(String::from(VERSION)), "print version and exit");
 
             ap.refer(&mut o.md_options.render.unsafe_).add_option(&["-u"], StoreTrue, "allow inline html");
 
